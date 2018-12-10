@@ -1,0 +1,11 @@
+Package: funranks
+Title: Functions for Ranks
+Version: 0.0.0.9000
+Authors@R: person("First", "Last", email = "s.dumble@stats4sd.org", role = c("aut", "cre"))
+Description: Easy analysis of ranks
+Depends: R (>= 3.5.1)
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Imports: ggplot2 (>= 2.2.0),stats (>= 3.3.1), utils (>= 3.3.1), dplyr (>= 0.7.7), tidyr (>= 0.8.2), brglm(>= 0.6.1)
+RoxygenNote: 6.1.0.9000
