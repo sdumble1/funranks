@@ -29,29 +29,33 @@ boot_rank<-function(data,IDcol,formula,nboot=100,diagnostics=TRUE,CIplot=TRUE,le
   sample<-sample(selections, replace=TRUE)
   sel<- sample %>% map_df(~filter(data,ID==.))
 
-  ####temporary hack - if not all selections present then cheat and restart
+
   frame<-model.frame(formula,data=modeldata2)
-  numberfy<-function(x){
-    if(class(x)=="character"|class(x)=="factor"){
-      x<-as.numeric(as.factor(x))-1
-    }
-    return(x)
-  }
-  frame<-sapply(frame,numberfy)
+  ref_flag<-sum(abs(sel[,colnames(frame)[ncol(frame)]]))>0
+       
+       
+  ####REMOVED temporary hack - if not all selections present then cheat and restart
+ # numberfy<-function(x){
+#    if(class(x)=="character"|class(x)=="factor"){
+#      x<-as.numeric(as.factor(x))-1
+#    }
+#    return(x)
+#  }
+#  frame<-sapply(frame,numberfy)
   
   
-  if(any(colSums(frame)==0)){
-    i<-i-1
-  }
-  else{
+#  if(any(colSums(frame)==0)){
+#    i<-i-1
+#  }
+ # else{
     m0<-suppressWarnings(brglm(data=sel, formula, family=binomial))
-    fulldata<-data.frame(coef=coefficients(m0),option=names(coefficients(m0)),boot=i)
+    fulldata<-data.frame(coef=coefficients(m0),option=names(coefficients(m0)),boot=i,ref_flag=ref_flag)
     
     #not all NA are created equal - if it is the final option then NA is fine otherwise NA is NA
     fulldata$coef[grep(colnames(frame)[ncol(frame)],names(coefficients(m0)))]<-0
     bootres<-rbind(bootres,fulldata)
     setTxtProgressBar(pb, i)
-    }
+  #  }
 
   }
   
@@ -81,5 +85,4 @@ boot_rank<-function(data,IDcol,formula,nboot=100,diagnostics=TRUE,CIplot=TRUE,le
   close(pb)
   return(output)
 }
-
 
