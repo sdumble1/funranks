@@ -5,7 +5,7 @@
 \title{Calculating bootstrapped model coefficients for a bradley terry rank model. Bootstrap based on ID column rather than individual rows.}
 \usage{
 boot_rank(data, IDcol, formula, nboot = 100, diagnostics = TRUE,
-  CIplot = TRUE, level = 0.95)
+  CIplot = TRUE, level = 0.95, CIMethod = "qvcalc")
 }
 \arguments{
 \item{data}{original data frame}

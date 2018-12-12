@@ -9,12 +9,14 @@
 #' @keywords bootstrap rank bradley terry
 #' @export
 #' @examples
-boot_rank<-function(data,IDcol,formula,nboot=100,diagnostics=TRUE,CIplot=TRUE,level=0.95){
+boot_rank<-function(data,IDcol,formula,nboot=100,diagnostics=TRUE,CIplot=TRUE,level=0.95,CIMethod="qvcalc"){
 
   require(dplyr)
   require(ggplot2)
   require(brglm)
+  require(brglm2)
   require(purrr)
+  require(qvcalc)
 
   bootres<-NULL
   if(length(IDcol)==nrow(data)){
@@ -26,13 +28,15 @@ boot_rank<-function(data,IDcol,formula,nboot=100,diagnostics=TRUE,CIplot=TRUE,le
   selections<-unique(data$ID)
   pb <- txtProgressBar(min = 0, max = nboot, style = 3)
   for(i in 1:nboot){
+    
+   
   sample<-sample(selections, replace=TRUE)
   sel<- sample %>% map_df(~filter(data,ID==.))
 
 
-  frame<-model.frame(formula,data=modeldata2)
+  frame<-model.frame(formula,data=sel)
   ref_flag<-sum(abs(sel[,colnames(frame)[ncol(frame)]]))>0
-       
+  
        
   ####REMOVED temporary hack - if not all selections present then cheat and restart
  # numberfy<-function(x){
@@ -48,20 +52,51 @@ boot_rank<-function(data,IDcol,formula,nboot=100,diagnostics=TRUE,CIplot=TRUE,le
 #    i<-i-1
 #  }
  # else{
-    m0<-suppressWarnings(brglm(data=sel, formula, family=binomial))
+ 
+    m0<-suppressWarnings(glm(data=sel, formula, family=binomial, method = "brglmFit", type = "AS_median"))
     fulldata<-data.frame(coef=coefficients(m0),option=names(coefficients(m0)),boot=i,ref_flag=ref_flag)
     
     #not all NA are created equal - if it is the final option then NA is fine otherwise NA is NA
+    if(ref_flag==TRUE){
     fulldata$coef[grep(colnames(frame)[ncol(frame)],names(coefficients(m0)))]<-0
+    }
+    if(ref_flag==FALSE){
+      
+      present<-apply(abs(frame),2,sum)>0
+      present<-present[present==TRUE]
+      
+      ref<-names(present)[length(present)]
+      
+     fulldata$coef[fulldata$option==ref]<-0
+      fulldata$ref_flag<-ref
+    }
+    
     bootres<-rbind(bootres,fulldata)
     setTxtProgressBar(pb, i)
+  }
+    if(any(bootres$ref_flag!="TRUE")){
+      
+      new_refs<-unique(bootres$ref_flag)[unique(bootres$ref_flag)!="TRUE"]
+      n_loop<-length(new_refs)
+      
+      for(k in 1:n_loop){
+        
+        adjustment<-mean(bootres$coef[bootres$ref_flag=="TRUE"&bootres$option==new_refs[k]],na.rm=T)
+        
+        bootres$coef[bootres$ref_flag==new_refs[k]]<-bootres$coef[bootres$ref_flag==new_refs[k]]+adjustment
+        
+      
+      
+    }
+    
   #  }
 
   }
   
   bootres$option<-reorder(bootres$option,bootres$coef,mean,na.rm=TRUE)
-  estimates<-bootres %>% group_by(option) %>% dplyr::summarise(est=median(coef,na.rm=T),lowerCI=quantile(coef,(1-level)/2,na.rm=T),
-                                                               upperCI=quantile(coef,1-((1-level)/2),na.rm=T))
+  
+  estimates<-CIboot(bootres,CIMethod,level)
+  
   output<-list(estimates=estimates,boots=bootres)
   if(diagnostics==TRUE){
 
