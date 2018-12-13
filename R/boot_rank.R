@@ -6,6 +6,10 @@
 #' @param diagnostics TRUE/FALSE. Produce diagnostic violin plots of coefficients
 #' @param CIplot TRUE/FALSE. Produce CI plots of coefficients.
 #' @param level confidence level for CI calculations
+#' @param CIMethod confidence interval calculation method. "quantile" for using tails of 
+#'   empirical distribution for CI and getting estimate from median value; "SD" for using standard deviation of distribution;
+#'   "qvcalc" for using quasivariance (and this getting interval around reference
+#'   level as well)
 #' @keywords bootstrap rank bradley terry
 #' @export
 #' @examples
